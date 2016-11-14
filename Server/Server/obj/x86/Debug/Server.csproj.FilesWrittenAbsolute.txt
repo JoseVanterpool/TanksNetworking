@@ -1,0 +1,5 @@
+/home/matthew/Documents/uni/yr3/game/Sockets/Server/obj/x86/Debug/.NETFramework,Version=v4.5.AssemblyAttribute.cs
+/home/matthew/Documents/uni/yr3/game/Sockets/Server/bin/Debug/Server.exe.mdb
+/home/matthew/Documents/uni/yr3/game/Sockets/Server/bin/Debug/Server.exe
+/home/matthew/Documents/uni/yr3/game/Sockets/Server/obj/x86/Debug/Server.exe
+/home/matthew/Documents/uni/yr3/game/Sockets/Server/obj/x86/Debug/Server.exe.mdb
