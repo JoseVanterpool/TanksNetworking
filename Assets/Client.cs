@@ -9,41 +9,17 @@ using System.Text;
 
 public class Client : MonoBehaviour {
 
-	public static IPEndPoint Probe() {
-		var Client = new UdpClient();
-		var RequestData = Encoding.ASCII.GetBytes("SomeRequestData");
-		var ServerEp = new IPEndPoint(IPAddress.Any, 0);
-
-		Client.EnableBroadcast = true;
-		Client.Send(RequestData, RequestData.Length, new IPEndPoint(IPAddress.Broadcast, 8888));
-
-		var ServerResponseData = Client.Receive(ref ServerEp);
-		var ServerResponse = Encoding.ASCII.GetString(ServerResponseData);
-		Debug.Log(String.Format("Recived {0} from {1}", ServerResponse, ServerEp.Address.ToString()));
-
-		Client.Close();
-		return ServerEp;
-	}
-
-	public static void StartClient() {
+	public static void StartClient(IPEndPoint remoteEP) {
 		// Data buffer for incoming data.
 		byte[] bytes = new byte[1024];
 
-		// Connect to a remote device.
+		// Connect to the server
 		try {
-			// Establish the remote endpoint for the socket.
-			// This example uses port 11000 on the local computer.
-			var remoteEP = Probe();
 			remoteEP.Port = 11000;
-//			IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
-//			IPAddress ipAddress = ipHostInfo.AddressList[0];
-//			IPEndPoint remoteEP = new IPEndPoint(ipAddress,11000);
 
 			// Create a TCP/IP  socket.
 			Socket sender = new Socket(AddressFamily.InterNetwork, 
 				SocketType.Stream, ProtocolType.Tcp );
-
-
 
 			// Connect the socket to the remote endpoint. Catch any errors.
 			try {
@@ -93,9 +69,43 @@ public class Client : MonoBehaviour {
 		}
 	}
 
+	private IEnumerator ProbeCoroutine(System.Action<IPEndPoint> callBack) {
+		//Set up new UDP Client
+		var Client = new UdpClient();
+		var RequestData = Encoding.ASCII.GetBytes("SomeRequestData");
+		var ServerEp = new IPEndPoint(IPAddress.Any, 0);
+
+		//Low timeouts to minimise lag
+		Client.Client.SendTimeout = 100;
+		Client.Client.ReceiveTimeout = 100;
+
+		Client.EnableBroadcast = true;
+
+		bool tryAgain = true;
+		while (tryAgain) {
+			try {
+				Client.Send(RequestData, RequestData.Length, new IPEndPoint(IPAddress.Broadcast, 8888));
+
+				var ServerResponseData = Client.Receive(ref ServerEp);
+				var ServerResponse = Encoding.ASCII.GetString(ServerResponseData);
+				Debug.Log(String.Format("Recived {0} from {1}", ServerResponse, ServerEp.Address.ToString()));
+				tryAgain = false;
+			} catch (SocketException e) {
+				Debug.Log(String.Format("Server not found: {0}", e.ToString()));
+			}
+			yield return 0;
+		}
+		Client.Close();
+		callBack (ServerEp);
+	}
 	// Use this for initialization
 	void Start () {
-		StartClient();
+//		IPEndPoint remoteEp = null;
+		StartCoroutine (ProbeCoroutine ((IPEndPoint p) => {
+			StartClient (p);
+		})
+		);
+
 	}
 	
 	// Update is called once per frame
